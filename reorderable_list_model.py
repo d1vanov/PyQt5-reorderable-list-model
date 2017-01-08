@@ -1,5 +1,5 @@
 import sys
-from PyQt5 import QtWidgets, QtCore
+from PyQt5 import QtWidgets, QtCore, QtGui
 
 class ReorderableListModel(QtCore.QAbstractListModel):
     '''
@@ -180,6 +180,38 @@ class SelectionModel(QtCore.QItemSelectionModel):
         self.select(new_selection, flags)
         self.setCurrentIndex(new_index, flags)
 
+class DropIndicatorPaintingStyle(QtWidgets.QProxyStyle):
+    def __init__(self, baseStyle, view):
+        QtWidgets.QProxyStyle.__init__(self, baseStyle)
+        self.view = view
+
+    def drawPrimitive(self, element, option, painter, widget):
+        if element == QtWidgets.QStyle.PE_IndicatorItemViewItemDrop:
+            index = self.view.indexAt(option.rect.center())
+            if index.isValid():
+                line = QtCore.QLine()
+                if index.row() == 0:
+                    line.setP1(option.rect.topLeft())
+                    line.setP2(option.rect.topRight())
+                else:
+                    line.setP1(option.rect.bottomLeft())
+                    line.setP2(option.rect.bottomRight())
+
+                painter.save()
+                painter.setRenderHints(QtGui.QPainter.Antialiasing)
+
+                pen = QtGui.QPen()
+                pen.setColor(option.palette.highlight().color())
+                pen.setWidth(2)
+                painter.setPen(pen)
+
+                painter.drawLine(line)
+
+                painter.restore()
+        else:
+            QtWidgets.QProxyStyle.drawPrimitive(self, element, option, painter,
+                                                widget)
+
 class MainForm(QtWidgets.QMainWindow):
     def __init__(self, parent=None):
         QtWidgets.QMainWindow.__init__(self, parent)
@@ -191,6 +223,8 @@ class MainForm(QtWidgets.QMainWindow):
         self.view.setSelectionModel(self.selectionModel)
         self.view.setDragDropMode(QtWidgets.QAbstractItemView.InternalMove)
         self.view.setDragDropOverwriteMode(False)
+        self.view.setStyle(DropIndicatorPaintingStyle(self.view.style(),
+                                                      self.view))
         self.setCentralWidget(self.view)
 
 def main():
