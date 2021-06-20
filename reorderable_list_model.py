@@ -151,7 +151,7 @@ class ReorderableListModel(QtCore.QAbstractListModel):
             if index < row:
                 target_row += 1
             self.beginInsertRows(QtCore.QModelIndex(), target_row, target_row)
-            self.nodes.insert(target_row, text)
+            self.nodes.insert(target_row, self.nodes[index])
             self.endInsertRows()
             self.lastDroppedItems.append(text)
             row += 1
